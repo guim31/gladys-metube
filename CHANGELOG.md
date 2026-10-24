@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-24
+
 ### Added
 
 - MeTube in Gladys: one device for the server (online, downloads in progress,
@@ -24,4 +26,5 @@ the notes of the version's GitHub Release.
   password of a reverse proxy, refresh interval, language of the feature names.
   Documentation in English, French, German and Spanish.
 
-[Unreleased]: https://github.com/guim31/gladys-metube/commits/main
+[Unreleased]: https://github.com/guim31/gladys-metube/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/guim31/gladys-metube/releases/tag/v1.0.0
