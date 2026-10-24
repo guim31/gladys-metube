@@ -93,9 +93,7 @@ device is added.
   unavailable or private, yt-dlp error). Information: the title, the link and
   the error message.
 
-Each download is announced once, even after a restart of the integration. What
-MeTube already had in its history when the integration started is not
-announced. The same link downloaded again is announced again.
+Each download is announced once, even after a restart of the integration. What MeTube already had in its history when its address was entered is not announced; what ended while the integration was stopped is announced when it starts again. The same link downloaded again is announced again.
 
 ### Actions
 
@@ -131,6 +129,7 @@ announced. The same link downloaded again is announced again.
 ## Limits
 
 - A download is seen at the next reading: within the refresh interval.
+- A download that MeTube clears from its history on its own (`CLEAR_COMPLETED_AFTER`) before the next reading is not announced.
 - At most 10 events of each kind per reading: beyond (a burst of downloads),
   the downloads are counted, not announced.
 - The integration does not delete downloads nor files, does not cancel a

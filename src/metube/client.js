@@ -48,6 +48,9 @@ export const QUALITIES = Object.freeze({
 export const QUALITY_KEYS = ['best', '1080', '720', '480', 'audio'];
 export const DEFAULT_QUALITY = 'best';
 
+// Under the 120 s of the scene action and of the widget button.
+export const ADD_TIMEOUT_MS = 100_000;
+
 export class MetubeError extends Error {
   /**
    * @param {string} kind one of ERROR_KINDS
@@ -148,13 +151,14 @@ export class MetubeClient {
   }
 
   /** One request; resolves with the parsed JSON answer (undefined when not JSON). */
-  async call(path, { method = 'GET', body } = {}) {
+  async call(path, { method = 'GET', body, timeoutMs } = {}) {
     let answer;
     try {
       answer = await this.request(`${this.url}${path}`, {
         method,
         headers: this.authorization ? { authorization: this.authorization } : {},
         body: body === undefined ? undefined : JSON.stringify(body),
+        timeoutMs,
       });
     } catch (err) {
       if (TLS_CODES.has(err.code)) {
@@ -224,8 +228,14 @@ export class MetubeClient {
     const answer = await this.call('/add', {
       method: 'POST',
       body: { url, ...choice, auto_start: true },
+      // MeTube answers once yt-dlp has read the link: long for a playlist.
+      timeoutMs: ADD_TIMEOUT_MS,
     });
-    if (answer?.status !== 'ok') {
+    if (!answer || typeof answer !== 'object') {
+      // A 200 that is not JSON: a login page of a proxy, not MeTube.
+      throw new MetubeError(ERROR_KINDS.NOT_METUBE, '/add did not answer like MeTube');
+    }
+    if (answer.status !== 'ok') {
       // "ERROR: [generic] 'x' is not a valid URL": the yt-dlp prefix is noise.
       const message = text(answer?.msg).replace(/^ERROR:\s*/, '') || 'refused';
       throw new RejectedError(message.slice(0, 300));

@@ -152,6 +152,56 @@ test('the same link downloaded again is announced again', async (t) => {
     ['Popeye for President'],
   );
   assert.equal(state(w, 'finished'), 2, 'MeTube keeps one entry per link');
+  // MeTube keeps the old place of the link: the order seen tells it ended last.
+  assert.equal(w.metube.done[0].url, popeye.url);
+  assert.equal(state(w, 'last_finished'), 'Popeye for President');
+  assert.equal(w.hub.done()[0].url, popeye.url);
+});
+
+test('beyond the downloads remembered, nothing is announced again and again', async (t) => {
+  const metube = new FakeMetube();
+  for (let i = 0; i < 4; i += 1) {
+    metube.finished(`Old ${i}`);
+  }
+  const w = await world(t, { metube, timings: { maxKnown: 3 } });
+  // Added after the others, ended before them: MeTube lists it first.
+  const late = metube.finish(metube.record('Added late'));
+  metube.done = [late, ...metube.done.filter((item) => item !== late)];
+  await w.hub.pollAll();
+  await w.hub.pollAll();
+  await w.hub.pollAll();
+  assert.deepEqual(
+    events(w, 'download_completed').map((event) => event.data.title),
+    ['Added late'],
+  );
+  metube.finished('Fresh');
+  await w.hub.pollAll();
+  await w.hub.pollAll();
+  assert.deepEqual(
+    events(w, 'download_completed').map((event) => event.data.title),
+    ['Added late', 'Fresh'],
+  );
+});
+
+test('new credentials during a reading: the events of the same server are not lost', async (t) => {
+  const w = await world(t);
+  w.metube.finish(w.metube.queue[0]);
+  const reading = w.hub.pollAll();
+  await w.fake.configUpdated({ ...CONFIG, username: 'someone', password: 'else' });
+  await reading;
+  assert.equal(events(w, 'download_completed').length, 1);
+});
+
+test('a 200 page that is not JSON on /add is not taken for a refusal', async (t) => {
+  const w = await world(t);
+  const original = w.metube.handle.bind(w.metube);
+  w.metube.handle = (path, options) =>
+    path === '/add'
+      ? { status: 200, headers: {}, body: '<html>login</html>' }
+      : original(path, options);
+  const ack = await w.fake.sceneAction('add_url', { url: 'https://archive.org/details/x' });
+  assert.equal(ack.success, false);
+  assert.match(ack.error, /No MeTube/);
 });
 
 test('a download cleared from the history is neither announced nor counted', async (t) => {

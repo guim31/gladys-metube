@@ -249,7 +249,11 @@ invalides. Réponses réelles dans `test/fixtures/metube/2026.10.23/`.
 - **API** : celle de la page web (`app/main.py`). `GET /history` → `{done, queue, pending}` ; `queue` contient les
   téléchargements en cours (`preparing`, `downloading`) **et** ceux qui attendent une place (`queued`) ou un direct
   programmé (`scheduled`) ; `pending` = ajoutés avec `auto_start: false`, qui attendent le bouton Start. `done` =
-  `finished` et `error`, **dans l'ordre de fin** ; `timestamp` est en **nanosecondes** et date l'**ajout**, pas la fin.
+  `finished` et `error`, dans l'ordre de fin **seulement en général** : après un redémarrage de MeTube, il
+  est trié par heure d'ajout (`saved_items`), et un lien re-téléchargé garde la place de son ancienne entrée
+  (`OrderedDict` indexé par URL, valeur remplacée). D'où l'ordre « vu en premier » mémorisé dans `/data`
+  (`known` : `[clé, vu à]`), relevé par la relecture. `timestamp` est en **nanosecondes** et date l'**ajout**, pas la
+  fin. `CLEAR_COMPLETED_AFTER` peut effacer une entrée entre deux lectures : jamais annoncée.
 - `/add` répond **toujours 200** : `{status: "ok"}` ou `{status: "error", msg}` (lien invalide, hôte introuvable), et
   le lien refusé **atterrit aussi dans `done` en `error`** (d'où `download_failed` juste après un refus). JSON invalide
   → 400. On envoie l'**ancien schéma** `format` + `quality` (`any`/`best|1080|720|480`, `mp3`/`best`) : la version
@@ -264,6 +268,8 @@ invalides. Réponses réelles dans `test/fixtures/metube/2026.10.23/`.
   les routes, socket.io compris.
 - `/history` écrit une ligne **info** dans le journal de MeTube à chaque appel : d'où le défaut à 30 s et la mention
   dans la doc. `/version` n'existe pas sur les vieilles versions (404 toléré).
+- `/add` ne répond qu'après la lecture du lien par yt-dlp (long pour une playlist) : délai de 100 s, et
+  `action_timeout_seconds: 120` sur le widget. Le `msg` d'un refus répète le lien : ne journaliser que l'hôte.
 - Socket.IO écarté : dépendance de plus pour un gain nul à cette cadence.
 - Formulaire du bouton de widget (Gladys ≥ 5.2.0) : `label`, `description`, `placeholder` et libellés d'options des
   `fields` doivent être des **objets multilingues** (`validateWidgetContent` refuse une chaîne), contrairement aux

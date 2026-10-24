@@ -19,7 +19,7 @@
 import { WIDGET_COLORS } from '@gladysassistant/integration-sdk';
 import { ERROR_KINDS, WIDGET_KEY } from './hub.js';
 import { DEFAULT_QUALITY, QUALITY_KEYS, isFailed } from './metube/client.js';
-import { ACTION_TEXT, ERROR_TEXT, pick } from './texts.js';
+import { ACTION_TEXT, CONNECTION_TEXT, ERROR_TEXT, pick } from './texts.js';
 
 // Action keys of the buttons: permanent once published (unique, the core
 // drops a button whose key is taken).
@@ -197,7 +197,7 @@ function addButton(language) {
 
 async function get(hub, { language = 'en' } = {}) {
   if (!hub.client) {
-    return message(TEXT.pick, language);
+    return message(hub.config?.invalidUrl ? CONNECTION_TEXT.invalid : TEXT.pick, language);
   }
   if (hub.error) {
     const unreachable = hub.error.kind === ERROR_KINDS.UNREACHABLE;

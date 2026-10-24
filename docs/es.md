@@ -95,8 +95,7 @@ antes de añadir el dispositivo.
   título, el enlace y el mensaje de error.
 
 Cada descarga se anuncia una sola vez, incluso tras un reinicio de la
-integración. Lo que MeTube ya tenía en su historial al iniciarse la integración
-no se anuncia. El mismo enlace descargado de nuevo se anuncia de nuevo.
+integración. Lo que MeTube ya tenía en su historial cuando se introdujo su dirección no se anuncia; lo que terminó mientras la integración estaba detenida se anuncia al reiniciarse. El mismo enlace descargado de nuevo se anuncia de nuevo.
 
 ### Acciones
 
@@ -133,6 +132,7 @@ no se anuncia. El mismo enlace descargado de nuevo se anuncia de nuevo.
 
 - Una descarga se ve en la lectura siguiente: dentro del intervalo de
   actualización.
+- Una descarga que MeTube borra por sí solo de su historial (`CLEAR_COMPLETED_AFTER`) antes de la lectura siguiente no se anuncia.
 - Como máximo 10 eventos de cada tipo por lectura: más allá (una ráfaga de
   descargas), se cuentan, no se anuncian.
 - La integración no elimina descargas ni archivos, no cancela una descarga y no

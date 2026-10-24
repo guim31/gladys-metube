@@ -21,9 +21,10 @@ const MAX_BODY_BYTES = 16 * 1024 * 1024;
  * @param {number} [options.timeoutMs]
  * @returns {Promise<{ status: number, headers: Record<string, string>, body: string }>}
  */
-export function httpRequest(url, { method = 'GET', headers = {}, body, timeoutMs = 15_000 } = {}) {
+export function httpRequest(url, { method = 'GET', headers = {}, body, timeoutMs } = {}) {
   const target = new URL(url);
   const isHttps = target.protocol === 'https:';
+  timeoutMs ??= 15_000;
   const requestHeaders = { accept: 'application/json', ...headers };
   if (body !== undefined) {
     requestHeaders['content-type'] = 'application/json';

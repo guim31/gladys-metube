@@ -98,8 +98,7 @@ funktioniert schon, bevor das Gerät hinzugefügt ist.
   Informationen: der Titel, der Link und die Fehlermeldung.
 
 Jeder Download wird nur einmal gemeldet, auch nach einem Neustart der
-Integration. Was MeTube beim Start der Integration schon im Verlauf hatte, wird
-nicht gemeldet. Derselbe Link, erneut heruntergeladen, wird erneut gemeldet.
+Integration. Was MeTube schon im Verlauf hatte, als seine Adresse eingegeben wurde, wird nicht gemeldet; was fertig wurde, während die Integration gestoppt war, wird bei ihrem Neustart gemeldet. Derselbe Link, erneut heruntergeladen, wird erneut gemeldet.
 
 ### Aktionen
 
@@ -138,6 +137,7 @@ nicht gemeldet. Derselbe Link, erneut heruntergeladen, wird erneut gemeldet.
 
 - Ein Download wird bei der nächsten Abfrage erkannt: innerhalb des
   Aktualisierungsintervalls.
+- Ein Download, den MeTube vor der nächsten Abfrage selbst aus seinem Verlauf löscht (`CLEAR_COMPLETED_AFTER`), wird nicht gemeldet.
 - Höchstens 10 Ereignisse jeder Art pro Abfrage: darüber hinaus (eine Welle von
   Downloads) werden sie gezählt, nicht gemeldet.
 - Die Integration löscht weder Downloads noch Dateien, bricht keinen Download

@@ -97,8 +97,7 @@ fonctionne avant même l'ajout de l'appareil.
   Informations : le titre, le lien et le message d'erreur.
 
 Chaque téléchargement est annoncé une seule fois, même après un redémarrage de
-l'intégration. Ce que MeTube avait déjà dans son historique au démarrage de
-l'intégration n'est pas annoncé. Le même lien téléchargé à nouveau est annoncé à
+l'intégration. Ce que MeTube avait déjà dans son historique quand son adresse a été saisie n'est pas annoncé ; ce qui s'est terminé pendant que l'intégration était arrêtée est annoncé à son redémarrage. Le même lien téléchargé à nouveau est annoncé à
 nouveau.
 
 ### Actions
@@ -138,6 +137,7 @@ nouveau.
 
 - Un téléchargement est vu à la lecture suivante : dans l'intervalle de
   rafraîchissement.
+- Un téléchargement que MeTube efface tout seul de son historique (`CLEAR_COMPLETED_AFTER`) avant la lecture suivante n'est pas annoncé.
 - Au plus 10 événements de chaque sorte par lecture : au-delà (une rafale de
   téléchargements), ils sont comptés, pas annoncés.
 - L'intégration ne supprime ni téléchargement ni fichier, n'annule pas un

@@ -119,6 +119,8 @@ test('nothing downloaded yet: a sentence instead of the list', async (t) => {
 test('no server, or a server down: a message instead of figures', async (t) => {
   const empty = await world(t, { config: {} });
   assert.match((await get(empty))[0].text, /address of your MeTube server/);
+  const invalid = await world(t, { config: { url: 'ftp://192.0.2.20' } });
+  assert.match((await get(invalid))[0].text, /not valid/);
   const w = await world(t);
   w.metube.down = true;
   await w.hub.pollAll();

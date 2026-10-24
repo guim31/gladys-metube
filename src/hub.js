@@ -44,13 +44,12 @@ export const TRIGGERS = Object.freeze({
 export const HUB_TIMINGS = {
   // At most this many events of each kind per reading (the newest ones).
   maxEventsPerRead: 10,
+  // Downloads remembered as seen; beyond, the older ones are taken as seen
+  // too (see `floor`).
+  maxKnown: 5000,
   // Republish an unchanged value this often (Gladys flags a value older than 48 h).
   heartbeatMs: 12 * 60 * 60_000,
 };
-
-// Downloads remembered as seen; beyond, the older ones of MeTube's history
-// are taken as seen too (see `floor`).
-export const MAX_KNOWN = 5000;
 
 const MB = 1024 * 1024;
 
@@ -86,6 +85,8 @@ export class MetubeHub {
     this.saved = this.emptySaved(null);
     this.pollTimer = null;
     this.polling = null;
+    this.readVersion = false;
+    this.seenAt = new Map();
     this.stopped = false;
     /** Problems already logged, by key: repeats go to debug. */
     this.warned = new Set();
@@ -127,7 +128,10 @@ export class MetubeHub {
       url: typeof saved.url === 'string' ? saved.url : null,
       primed: saved.primed === true,
       known: Array.isArray(saved.known)
-        ? saved.known.filter((key) => typeof key === 'string').slice(0, MAX_KNOWN)
+        ? saved.known.filter(
+            (entry) =>
+              Array.isArray(entry) && typeof entry[0] === 'string' && Number.isFinite(entry[1]),
+          )
         : [],
       floor: Number.isFinite(saved.floor) ? saved.floor : null,
     };
@@ -269,7 +273,8 @@ export class MetubeHub {
     const before = this.widgetView();
     try {
       // The version once per connection: it only changes with a restart of MeTube.
-      const version = this.server.reachable ? null : await client.version();
+      const version = this.server.reachable && !this.readVersion ? null : await client.version();
+      this.readVersion = false;
       const history = await client.history();
       if (client !== this.client) {
         return; // reconfigured meanwhile
@@ -312,38 +317,58 @@ export class MetubeHub {
     };
 
     const saved = this.saved;
-    const known = new Set(saved.known);
-    // Oldest first: the order they ended in.
+    const now = this.now();
+    const seen = new Map(saved.known);
+    // Oldest first: the order MeTube lists them in.
     const fresh = saved.primed
       ? [...history.done]
           .reverse()
           .filter(
-            (item) =>
-              !known.has(item.key) && (saved.floor === null || (item.at ?? 0) >= saved.floor),
+            (item) => !seen.has(item.key) && (saved.floor === null || (item.at ?? 0) > saved.floor),
           )
       : [];
 
-    const kept = history.done.slice(0, MAX_KNOWN);
+    // When each download was first seen: the order they ended in. MeTube's own
+    // order is not (sorted by time added after its restart, a download again
+    // keeps the place of the previous one).
+    // Strictly after every download seen before, even when the clock stands still.
+    const stamp = Math.max(now, ...saved.known.map(([, at]) => at + 1));
+    const known = history.done.map((item) => [item.key, seen.get(item.key) ?? stamp]);
+    const order = new Map(history.done.map((item, index) => [item.key, index]));
+    known.sort((a, b) => b[1] - a[1] || order.get(a[0]) - order.get(b[0]));
+    const max = this.timings.maxKnown;
+    const kept = known.slice(0, max);
+    // Beyond the cap, every download added before the newest one dropped is
+    // taken as seen: a download added later is not dropped, it was seen later.
+    const dropped = new Set(known.slice(max).map(([key]) => key));
+    const floor = dropped.size
+      ? Math.max(
+          ...history.done.filter((item) => dropped.has(item.key)).map((item) => item.at ?? 0),
+        )
+      : null;
     const changed =
       !saved.primed ||
-      fresh.length > 0 ||
+      floor !== saved.floor ||
       kept.length !== saved.known.length ||
-      kept.some((item, index) => item.key !== saved.known[index]);
+      kept.some(
+        ([key, at], index) => key !== saved.known[index][0] || at !== saved.known[index][1],
+      );
     if (changed) {
       saved.primed = true;
-      saved.known = kept.map((item) => item.key);
-      saved.floor = history.done.length > MAX_KNOWN ? (kept.at(-1).at ?? null) : null;
+      saved.known = kept;
+      saved.floor = floor;
       // On disk before the events: a crash in between announces nothing twice.
       this.store.save(saved);
       await this.store.flush();
     }
-    if (client !== this.client) {
-      return;
+    this.seenAt = new Map(kept);
+    if (this.saved !== saved) {
+      return; // another server meanwhile: these events are not its own
     }
 
-    const max = this.timings.maxEventsPerRead;
-    const completed = fresh.filter((item) => !isFailed(item)).slice(-max);
-    const failed = fresh.filter(isFailed).slice(-max);
+    const maxEvents = this.timings.maxEventsPerRead;
+    const completed = fresh.filter((item) => !isFailed(item)).slice(-maxEvents);
+    const failed = fresh.filter(isFailed).slice(-maxEvents);
     for (const item of completed) {
       logger.debug(`MeTube: finished "${item.title}"`);
       await this.fire(TRIGGERS.COMPLETED, {
@@ -411,9 +436,14 @@ export class MetubeHub {
     return (this.server.history?.running ?? []).reduce((sum, item) => sum + (item.speed ?? 0), 0);
   }
 
-  /** The finished and failed downloads, last ended first. */
+  /** The finished and failed downloads, last ended (first seen) first. */
   done() {
-    return this.server.history?.done ?? [];
+    const done = this.server.history?.done ?? [];
+    const seenAt = this.seenAt ?? new Map();
+    return done
+      .map((item, index) => ({ item, index, at: seenAt.get(item.key) ?? 0 }))
+      .sort((a, b) => b.at - a.at || a.index - b.index)
+      .map(({ item }) => item);
   }
 
   /** What the widget shows: a change asks Gladys to reload it. */
@@ -429,7 +459,9 @@ export class MetubeHub {
           Math.floor((item.percent ?? 0) / 10),
         ]),
         history.waiting.map((item) => item.key),
-        history.done.slice(0, 10).map((item) => item.key),
+        this.done()
+          .slice(0, 10)
+          .map((item) => item.key),
         this.counts(),
       ],
     ]);
@@ -588,7 +620,8 @@ export class MetubeHub {
       await this.client.add(link, choice);
     } catch (err) {
       if (err instanceof RejectedError) {
-        logger.info(`MeTube refused a link of ${parsed.host}: ${err.message}`);
+        // The host only: the message of yt-dlp repeats the link, token included.
+        logger.info(`MeTube refused a link of ${parsed.host}`);
         // MeTube lists the refused link as failed: download_failed fires now.
         await this.refresh().catch(() => {});
       }
@@ -624,10 +657,8 @@ export class MetubeHub {
 
   /** "Test the connection": read MeTube now, one report. */
   async testConnection() {
-    if (this.client && this.server.reachable) {
-      // Read the version again: MeTube may have been updated.
-      this.server = { ...this.server, reachable: null };
-    }
+    // Read the version again: MeTube may have been updated.
+    this.readVersion = true;
     await this.refresh();
     const message = {};
     for (const [language, text] of Object.entries(REPORT_TEXT)) {

@@ -81,6 +81,18 @@ test('a link added is one line at info, with the host only', async (t) => {
   assert.ok(!logs.texts().join('\n').includes('s3cr3t'));
 });
 
+test('a link refused by MeTube is logged with its host only', async (t) => {
+  const logs = captureLogs(t);
+  const w = await world(t);
+  logs.clear();
+  const link = 'https://example.org/watch?token=s3cr3t';
+  w.metube.refusals.set(link, `ERROR: [generic] '${link}' is not a valid URL`);
+  const ack = await w.fake.sceneAction('add_url', { url: link });
+  assert.equal(ack.success, false);
+  assert.match(logs.texts().join('\n'), /refused a link of example\.org/);
+  assert.ok(!logs.texts().join('\n').includes('s3cr3t'));
+});
+
 test('a server that stays down is logged once, and once when it is back', async (t) => {
   const logs = captureLogs(t);
   const w = await world(t);

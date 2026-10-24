@@ -455,7 +455,8 @@
         "de": "Warteschlange mit Fortschritt, letzte fertige oder fehlgeschlagene Downloads, Knopf zum Hinzufügen.",
         "es": "Cola con progreso, últimas descargas terminadas o fallidas, botón para añadir un vídeo."
       },
-      "icon": "download"
+      "icon": "download",
+      "action_timeout_seconds": 120
     }
   ]
 }

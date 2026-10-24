@@ -84,7 +84,6 @@ export class FakeMetube {
   /** The download ends well: out of the queue, at the end of `done`. */
   finish(item, { size = 26_138_707, filename = `${item.title}.mp4` } = {}) {
     this.queue = this.queue.filter((other) => other !== item);
-    this.done = this.done.filter((other) => other.url !== item.url);
     Object.assign(item, {
       status: 'finished',
       percent: 100,
@@ -93,16 +92,28 @@ export class FakeMetube {
       size,
       filename,
     });
-    this.done.push(item);
+    this.toDone(item);
     return item;
+  }
+
+  /**
+   * Into `done`, as MeTube's OrderedDict keyed by URL: a link already there
+   * keeps its place (the entry is replaced), a new one goes at the end.
+   */
+  toDone(item) {
+    const index = this.done.findIndex((other) => other.url === item.url);
+    if (index === -1) {
+      this.done.push(item);
+    } else {
+      this.done[index] = item;
+    }
   }
 
   /** The download fails, with the message of yt-dlp. */
   fail(item, message = 'ERROR: [generic] Unable to download webpage: HTTP Error 404: Not Found') {
     this.queue = this.queue.filter((other) => other !== item);
-    this.done = this.done.filter((other) => other.url !== item.url);
     Object.assign(item, { status: 'error', msg: message, error: message, percent: null });
-    this.done.push(item);
+    this.toDone(item);
     return item;
   }
 
