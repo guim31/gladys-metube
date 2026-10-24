@@ -1,177 +1,461 @@
 {
   "manifest_version": 1,
   "type": "device",
-  "name": "Demo Devices Template",
+  "name": "MeTube",
   "description": {
-    "en": "Starter template showing sensors, a switch, a dimmable light and a smart plug.",
-    "fr": "Template de démarrage : capteurs, interrupteur, lampe variable et prise connectée."
+    "en": "MeTube in Gladys: download queue, finished and failed downloads, add a video from a scene.",
+    "fr": "MeTube dans Gladys : file de téléchargements, terminés, erreurs, ajout d'une vidéo par scène.",
+    "de": "MeTube in Gladys: Download-Warteschlange, fertige und fehlgeschlagene Downloads, Video hinzufügen.",
+    "es": "MeTube en Gladys: cola de descargas, terminadas y fallidas, añadir un vídeo desde una escena."
   },
   "version": "1.0.0",
-  "docker_image": "ghcr.io/gladysassistant/integration-template-js:1.0.0",
-  "gladys_version": ">=5.1.0",
-  "cover_image": "https://raw.githubusercontent.com/GladysAssistant/integration-template-js/master/cover.png",
-  "categories": ["lighting", "security", "environment"],
-  "transports": ["local", "cloud"],
+  "docker_image": "ghcr.io/guim31/gladys-metube:1.0.0",
+  "gladys_version": ">=5.2.0",
+  "cover_image": "https://raw.githubusercontent.com/guim31/gladys-metube/main/cover.png",
+  "categories": ["multimedia"],
+  "transports": ["local"],
   "config_schema": [
     {
-      "key": "intro",
+      "key": "server",
       "type": "section",
-      "label": { "en": "Getting started", "fr": "Pour commencer" },
+      "label": {
+        "en": "MeTube server",
+        "fr": "Serveur MeTube",
+        "de": "MeTube-Server",
+        "es": "Servidor MeTube"
+      },
       "description": {
-        "en": "The demo weather station reads real data from the free Open-Meteo API: pick the coordinates to observe. No account, no API key.",
-        "fr": "La station météo de démonstration lit de vraies données via l'API gratuite Open-Meteo : choisissez les coordonnées à observer. Pas de compte, pas de clé d'API."
+        "en": "Address of the MeTube web interface. The integration reads its download queue and adds the links you send it from Gladys.",
+        "fr": "Adresse de l'interface web de MeTube. L'intégration lit sa file de téléchargements et y ajoute les liens envoyés depuis Gladys.",
+        "de": "Adresse der MeTube-Weboberfläche. Die Integration liest die Download-Warteschlange und fügt die Links hinzu, die du aus Gladys sendest.",
+        "es": "Dirección de la interfaz web de MeTube. La integración lee su cola de descargas y añade los enlaces que usted envía desde Gladys."
       },
       "links": [
         {
-          "url": "https://open-meteo.com/en/docs",
-          "label": { "en": "Open-Meteo documentation", "fr": "Documentation Open-Meteo" }
+          "url": "https://github.com/alexta69/metube",
+          "label": {
+            "en": "MeTube on GitHub",
+            "fr": "MeTube sur GitHub",
+            "de": "MeTube auf GitHub",
+            "es": "MeTube en GitHub"
+          }
         }
       ]
     },
     {
-      "key": "latitude",
-      "type": "number",
-      "label": { "en": "Latitude", "fr": "Latitude" },
-      "description": {
-        "en": "Latitude used for the demo weather sensor.",
-        "fr": "Latitude utilisée par le capteur météo de démonstration."
+      "key": "url",
+      "type": "string",
+      "label": {
+        "en": "Address",
+        "fr": "Adresse",
+        "de": "Adresse",
+        "es": "Dirección"
       },
-      "placeholder": { "en": "e.g. 48.8566", "fr": "ex. 48.8566" },
-      "required": true,
-      "default": 48.8566,
-      "min": -90,
-      "max": 90
-    },
-    {
-      "key": "longitude",
-      "type": "number",
-      "label": { "en": "Longitude", "fr": "Longitude" },
       "description": {
-        "en": "Longitude used for the demo weather sensor.",
-        "fr": "Longitude utilisée par le capteur météo de démonstration."
+        "en": "IP address or name of the server, with the port of the web interface (8081 by default) and the URL_PREFIX if MeTube has one.",
+        "fr": "Adresse IP ou nom du serveur, avec le port de l'interface web (8081 par défaut) et l'URL_PREFIX si MeTube en a un.",
+        "de": "IP-Adresse oder Name des Servers, mit dem Port der Weboberfläche (standardmäßig 8081) und dem URL_PREFIX, falls MeTube eines hat.",
+        "es": "Dirección IP o nombre del servidor, con el puerto de la interfaz web (8081 por defecto) y el URL_PREFIX si MeTube tiene uno."
       },
-      "placeholder": { "en": "e.g. 2.3522", "fr": "ex. 2.3522" },
-      "required": true,
-      "default": 2.3522,
-      "min": -180,
-      "max": 180
-    },
-    {
-      "key": "unit",
-      "type": "select",
-      "label": { "en": "Temperature unit", "fr": "Unité de température" },
+      "placeholder": {
+        "en": "e.g. 192.168.1.2:8081",
+        "fr": "ex. 192.168.1.2:8081",
+        "de": "z. B. 192.168.1.2:8081",
+        "es": "p. ej. 192.168.1.2:8081"
+      },
       "required": false,
-      "default": "celsius",
+      "default": ""
+    },
+    {
+      "key": "username",
+      "type": "string",
+      "label": {
+        "en": "User name",
+        "fr": "Identifiant",
+        "de": "Benutzername",
+        "es": "Usuario"
+      },
+      "description": {
+        "en": "Only when a reverse proxy in front of MeTube asks for a password (MeTube itself has none).",
+        "fr": "Seulement si un proxy inverse devant MeTube demande un mot de passe (MeTube lui-même n'en a pas).",
+        "de": "Nur wenn ein Reverse Proxy vor MeTube ein Passwort verlangt (MeTube selbst hat keines).",
+        "es": "Solo si un proxy inverso delante de MeTube pide una contraseña (MeTube en sí no tiene)."
+      },
+      "required": false,
+      "default": ""
+    },
+    {
+      "key": "password",
+      "type": "secret",
+      "label": {
+        "en": "Password",
+        "fr": "Mot de passe",
+        "de": "Passwort",
+        "es": "Contraseña"
+      },
+      "description": {
+        "en": "Password of the reverse proxy, with the user name above.",
+        "fr": "Mot de passe du proxy inverse, avec l'identifiant ci-dessus.",
+        "de": "Passwort des Reverse Proxys, mit dem Benutzernamen oben.",
+        "es": "Contraseña del proxy inverso, con el usuario de arriba."
+      },
+      "required": false
+    },
+    {
+      "key": "poll_interval",
+      "type": "select",
+      "label": {
+        "en": "Refresh interval",
+        "fr": "Intervalle de rafraîchissement",
+        "de": "Aktualisierungsintervall",
+        "es": "Intervalo de actualización"
+      },
+      "description": {
+        "en": "How often the queue of MeTube is read: progress, finished and failed downloads.",
+        "fr": "Fréquence de lecture de la file de MeTube : progression, téléchargements terminés et en erreur.",
+        "de": "Wie oft die Warteschlange von MeTube gelesen wird: Fortschritt, fertige und fehlgeschlagene Downloads.",
+        "es": "Con qué frecuencia se lee la cola de MeTube: progreso, descargas terminadas y fallidas."
+      },
+      "required": false,
+      "default": "30",
       "options": [
-        { "value": "celsius", "label": { "en": "Celsius", "fr": "Celsius" } },
-        { "value": "fahrenheit", "label": { "en": "Fahrenheit", "fr": "Fahrenheit" } }
+        {
+          "value": "10",
+          "label": {
+            "en": "10 seconds",
+            "fr": "10 secondes",
+            "de": "10 Sekunden",
+            "es": "10 segundos"
+          }
+        },
+        {
+          "value": "30",
+          "label": {
+            "en": "30 seconds",
+            "fr": "30 secondes",
+            "de": "30 Sekunden",
+            "es": "30 segundos"
+          }
+        },
+        {
+          "value": "60",
+          "label": {
+            "en": "1 minute",
+            "fr": "1 minute",
+            "de": "1 Minute",
+            "es": "1 minuto"
+          }
+        },
+        {
+          "value": "120",
+          "label": {
+            "en": "2 minutes",
+            "fr": "2 minutes",
+            "de": "2 Minuten",
+            "es": "2 minutos"
+          }
+        }
       ]
     },
     {
-      "key": "poll_frequency",
-      "type": "number",
-      "label": { "en": "Refresh interval (s)", "fr": "Intervalle de rafraîchissement (s)" },
+      "key": "language",
+      "type": "select",
+      "label": {
+        "en": "Language of the feature names",
+        "fr": "Langue des noms de fonctionnalités",
+        "de": "Sprache der Funktionsnamen",
+        "es": "Idioma de los nombres de funciones"
+      },
       "description": {
-        "en": "How often sensors are polled, in seconds (one minute minimum).",
-        "fr": "Fréquence d'interrogation des capteurs, en secondes (une minute minimum)."
+        "en": "Names given to the features when the device is added, and the texts sent by the integration.",
+        "fr": "Noms donnés aux fonctionnalités à l'ajout de l'appareil, et textes envoyés par l'intégration.",
+        "de": "Namen der Funktionen beim Hinzufügen des Geräts und Texte, die die Integration sendet.",
+        "es": "Nombres de las funciones al añadir el dispositivo y textos que envía la integración."
       },
       "required": false,
-      "default": 300,
-      "min": 60,
-      "max": 3600
+      "default": "fr",
+      "options": [
+        {
+          "value": "en",
+          "label": {
+            "en": "English",
+            "fr": "Anglais",
+            "de": "Englisch",
+            "es": "Inglés"
+          }
+        },
+        {
+          "value": "fr",
+          "label": {
+            "en": "French",
+            "fr": "Français",
+            "de": "Französisch",
+            "es": "Francés"
+          }
+        },
+        {
+          "value": "de",
+          "label": {
+            "en": "German",
+            "fr": "Allemand",
+            "de": "Deutsch",
+            "es": "Alemán"
+          }
+        },
+        {
+          "value": "es",
+          "label": {
+            "en": "Spanish",
+            "fr": "Espagnol",
+            "de": "Spanisch",
+            "es": "Español"
+          }
+        }
+      ]
     }
   ],
   "actions": [
     {
-      "key": "test_weather",
-      "label": { "en": "Test the weather provider", "fr": "Tester le fournisseur météo" },
-      "timeout_seconds": 30
-    },
-    {
-      "key": "identify",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
-        }
-      ]
+      "key": "test_connection",
+      "label": {
+        "en": "Test the connection",
+        "fr": "Tester la connexion",
+        "de": "Verbindung testen",
+        "es": "Probar la conexión"
+      },
+      "description": {
+        "en": "Reads MeTube now and reports what it finds.",
+        "fr": "Lit MeTube maintenant et indique ce qu'il trouve.",
+        "de": "Liest MeTube sofort und meldet, was es findet.",
+        "es": "Lee MeTube ahora e indica lo que encuentra."
+      },
+      "timeout_seconds": 60
     }
   ],
   "scene_triggers": [
     {
-      "key": "motion_detected",
-      "label": { "en": "Motion detected", "fr": "Mouvement détecté" },
-      "description": {
-        "en": "A demo motion sensor saw a person or an animal move.",
-        "fr": "Un détecteur de démonstration a vu bouger une personne ou un animal."
+      "key": "download_completed",
+      "label": {
+        "en": "MeTube download finished",
+        "fr": "Téléchargement MeTube terminé",
+        "de": "MeTube-Download abgeschlossen",
+        "es": "Descarga de MeTube terminada"
       },
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Sensor", "fr": "Détecteur" }
-        },
-        {
-          "key": "target",
-          "type": "multi_select",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" },
-          "options": [
-            { "value": "person", "label": { "en": "Person", "fr": "Personne" } },
-            { "value": "animal", "label": { "en": "Animal", "fr": "Animal" } }
-          ]
-        }
-      ],
+      "description": {
+        "en": "A download of MeTube has just finished, whoever added it.",
+        "fr": "Un téléchargement de MeTube vient de se terminer, quel que soit celui qui l'a ajouté.",
+        "de": "Ein Download von MeTube ist gerade fertig geworden, egal wer ihn hinzugefügt hat.",
+        "es": "Una descarga de MeTube acaba de terminar, sin importar quién la añadió."
+      },
       "variables": [
         {
-          "key": "target",
+          "key": "title",
           "type": "string",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" }
+          "label": {
+            "en": "Title",
+            "fr": "Titre",
+            "de": "Titel",
+            "es": "Título"
+          }
+        },
+        {
+          "key": "url",
+          "type": "string",
+          "label": {
+            "en": "Link of the video",
+            "fr": "Lien de la vidéo",
+            "de": "Link des Videos",
+            "es": "Enlace del vídeo"
+          }
+        },
+        {
+          "key": "filename",
+          "type": "string",
+          "label": {
+            "en": "File name",
+            "fr": "Nom du fichier",
+            "de": "Dateiname",
+            "es": "Nombre del archivo"
+          }
+        },
+        {
+          "key": "size_mb",
+          "type": "number",
+          "label": {
+            "en": "Size (MB)",
+            "fr": "Taille (Mo)",
+            "de": "Größe (MB)",
+            "es": "Tamaño (MB)"
+          }
+        }
+      ]
+    },
+    {
+      "key": "download_failed",
+      "label": {
+        "en": "MeTube download failed",
+        "fr": "Téléchargement MeTube en erreur",
+        "de": "MeTube-Download fehlgeschlagen",
+        "es": "Descarga de MeTube fallida"
+      },
+      "description": {
+        "en": "A download of MeTube failed: link not supported, video unavailable, yt-dlp error.",
+        "fr": "Un téléchargement de MeTube a échoué : lien non pris en charge, vidéo indisponible, erreur de yt-dlp.",
+        "de": "Ein Download von MeTube ist fehlgeschlagen: Link nicht unterstützt, Video nicht verfügbar, yt-dlp-Fehler.",
+        "es": "Una descarga de MeTube ha fallado: enlace no compatible, vídeo no disponible, error de yt-dlp."
+      },
+      "variables": [
+        {
+          "key": "title",
+          "type": "string",
+          "label": {
+            "en": "Title",
+            "fr": "Titre",
+            "de": "Titel",
+            "es": "Título"
+          }
+        },
+        {
+          "key": "url",
+          "type": "string",
+          "label": {
+            "en": "Link of the video",
+            "fr": "Lien de la vidéo",
+            "de": "Link des Videos",
+            "es": "Enlace del vídeo"
+          }
+        },
+        {
+          "key": "error",
+          "type": "string",
+          "label": {
+            "en": "Error message (yt-dlp)",
+            "fr": "Message d'erreur (yt-dlp)",
+            "de": "Fehlermeldung (yt-dlp)",
+            "es": "Mensaje de error (yt-dlp)"
+          }
         }
       ]
     }
   ],
   "scene_actions": [
     {
-      "key": "identify_device",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "description": {
-        "en": "Make a device signal itself (the demo light blinks).",
-        "fr": "Fait se signaler un appareil (la lampe de démonstration clignote)."
+      "key": "add_url",
+      "label": {
+        "en": "Add a video to MeTube",
+        "fr": "Ajouter une vidéo à MeTube",
+        "de": "Video zu MeTube hinzufügen",
+        "es": "Añadir un vídeo a MeTube"
       },
-      "timeout_seconds": 15,
+      "description": {
+        "en": "Adds a video or a playlist to the queue of MeTube, in the quality chosen, started at once.",
+        "fr": "Ajoute une vidéo ou une playlist à la file de MeTube, dans la qualité choisie, lancée aussitôt.",
+        "de": "Fügt ein Video oder eine Playlist in der gewählten Qualität zur Warteschlange von MeTube hinzu, sofort gestartet.",
+        "es": "Añade un vídeo o una lista a la cola de MeTube, en la calidad elegida, iniciada de inmediato."
+      },
+      "timeout_seconds": 120,
       "fields": [
         {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
-        }
-      ],
-      "outputs": [
+          "key": "url",
+          "type": "string",
+          "required": true,
+          "label": {
+            "en": "Link",
+            "fr": "Lien",
+            "de": "Link",
+            "es": "Enlace"
+          },
+          "description": {
+            "en": "Address of a video or a playlist, from any site yt-dlp supports. A variable of an earlier step works too.",
+            "fr": "Adresse d'une vidéo ou d'une playlist, de tout site pris en charge par yt-dlp. Une variable d'une étape précédente convient aussi.",
+            "de": "Adresse eines Videos oder einer Playlist, von jeder Seite, die yt-dlp unterstützt. Eine Variable eines früheren Schritts geht auch.",
+            "es": "Dirección de un vídeo o de una lista, de cualquier sitio compatible con yt-dlp. También sirve una variable de un paso anterior."
+          },
+          "placeholder": {
+            "en": "https://…",
+            "fr": "https://…",
+            "de": "https://…",
+            "es": "https://…"
+          }
+        },
         {
-          "key": "signalled",
-          "type": "boolean",
-          "label": { "en": "Device signalled", "fr": "Appareil signalé" }
+          "key": "quality",
+          "type": "select",
+          "required": false,
+          "default": "best",
+          "label": {
+            "en": "Quality",
+            "fr": "Qualité",
+            "de": "Qualität",
+            "es": "Calidad"
+          },
+          "options": [
+            {
+              "value": "best",
+              "label": {
+                "en": "Best video",
+                "fr": "Meilleure vidéo",
+                "de": "Bestes Video",
+                "es": "Mejor vídeo"
+              }
+            },
+            {
+              "value": "1080",
+              "label": {
+                "en": "Video 1080p",
+                "fr": "Vidéo 1080p",
+                "de": "Video 1080p",
+                "es": "Vídeo 1080p"
+              }
+            },
+            {
+              "value": "720",
+              "label": {
+                "en": "Video 720p",
+                "fr": "Vidéo 720p",
+                "de": "Video 720p",
+                "es": "Vídeo 720p"
+              }
+            },
+            {
+              "value": "480",
+              "label": {
+                "en": "Video 480p",
+                "fr": "Vidéo 480p",
+                "de": "Video 480p",
+                "es": "Vídeo 480p"
+              }
+            },
+            {
+              "value": "audio",
+              "label": {
+                "en": "Audio only (MP3)",
+                "fr": "Audio seul (MP3)",
+                "de": "Nur Audio (MP3)",
+                "es": "Solo audio (MP3)"
+              }
+            }
+          ]
         }
       ]
     }
   ],
   "widgets": [
     {
-      "key": "demo_status",
-      "label": { "en": "Demo status", "fr": "État de la démo" },
-      "description": {
-        "en": "Live temperature and plug power, plug connection and observed location.",
-        "fr": "Température et puissance en direct, connexion de la prise, position observée."
+      "key": "downloads",
+      "label": {
+        "en": "MeTube downloads",
+        "fr": "Téléchargements MeTube",
+        "de": "MeTube-Downloads",
+        "es": "Descargas de MeTube"
       },
-      "icon": "activity",
-      "action_timeout_seconds": 15
+      "description": {
+        "en": "Queue with progress, last downloads finished or failed, a button to add a video.",
+        "fr": "File avec progression, derniers téléchargements terminés ou en erreur, ajout d'une vidéo.",
+        "de": "Warteschlange mit Fortschritt, letzte fertige oder fehlgeschlagene Downloads, Knopf zum Hinzufügen.",
+        "es": "Cola con progreso, últimas descargas terminadas o fallidas, botón para añadir un vídeo."
+      },
+      "icon": "download"
     }
   ]
 }

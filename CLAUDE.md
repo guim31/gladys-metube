@@ -32,15 +32,19 @@ pushing.
 
 ```
 index.js                          SDK wiring only: handlers registered before connect()
-src/devices/index.js              registry of the device blueprints + dispatch helpers
-src/devices/<type>.js             one device type per file (buildDevice, onPoll, onSetValue...)
-src/scenes.js                     scene action handlers (manifest `scene_actions`)
-src/widgets.js                    dashboard widget handlers (manifest `widgets`)
+src/app.js                        registers every handler on the hub (tests drive the same wiring)
 src/config.js                     DEFAULT_CONFIG (mirrors the manifest defaults) + normalization
-src/weather.js                    example driver (Open-Meteo)
+src/metube/http.js                the one network function (node:http/https, JSON body), the test seam
+src/metube/client.js              /version, /history, /add, /start; error kinds; history parsing
+src/devices.js                    the server device, feature names in 4 languages
+src/hub.js                        timer, states, scene events, commands, connection status
+src/scenes.js                     scene action handler (manifest `scene_actions`)
+src/widgets.js                    the `downloads` widget (manifest `widgets`), its form and buttons
+src/texts.js                      messages in 4 languages
+src/store.js                      /data/metube-state.json (server read last, downloads seen)
 gladys-assistant-integration.json manifest: name, config_schema, actions, image...
-docs/en.md, docs/fr.md            user documentation, re-hosted by Gladys (mandatory)
-test/                             node --test, against the SDK's fake Gladys (integration-sdk/testing)
+docs/{en,fr,de,es}.md             user documentation, re-hosted by Gladys (mandatory)
+test/                             node --test, against the SDK's fake Gladys and test/helpers/fakeMetube.js
 .github/scripts/release.mjs       release helpers (manifest bump, changelog), tested in test/
 ```
 
@@ -70,8 +74,10 @@ test/                             node --test, against the SDK's fake Gladys (in
   `type: "provider"`: 5.1.0). `test/manifest.test.js` ties the manifest to the
   code (defaults, action, scene and widget handlers): change both sides
   together.
-- **User-facing text** is bilingual (English and French): action messages,
-  manifest texts, and `docs/en.md` / `docs/fr.md`, kept in sync.
+- **User-facing text** is in four languages (English, French, German with
+  "du", Spanish with "usted"): action messages, manifest texts, widget texts,
+  feature names and `docs/{en,fr,de,es}.md`, kept in sync
+  (`test/i18n.test.js`).
 - **Style.** Prettier formats, ESLint catches mistakes. Comments explain why,
   in English. Tests never touch the network.
 
@@ -233,3 +239,34 @@ long, et sur un « Sie »/« Ihr… » de politesse en allemand. Le store exige 
 - Docs `en`, `fr`, `de`, `es` avec les mêmes sections.
 - Chauffe, ouverture, sécurité : ne rien rendre pilotable « comme un thermostat » ou par un assistant
   vocal quand une erreur serait dangereuse (leçon d'OctoPrint).
+
+## MeTube (notes de cette intégration)
+
+Vérifié sur un vrai **MeTube 2026.10.23** (yt-dlp 2026.10.21, image `ghcr.io/alexta69/metube`), le 24/10/2026,
+avec le téléchargement réel de _Popeye for President_ (domaine public, archive.org) depuis le Beelink, et des liens
+invalides. Réponses réelles dans `test/fixtures/metube/2026.10.23/`.
+
+- **API** : celle de la page web (`app/main.py`). `GET /history` → `{done, queue, pending}` ; `queue` contient les
+  téléchargements en cours (`preparing`, `downloading`) **et** ceux qui attendent une place (`queued`) ou un direct
+  programmé (`scheduled`) ; `pending` = ajoutés avec `auto_start: false`, qui attendent le bouton Start. `done` =
+  `finished` et `error`, **dans l'ordre de fin** ; `timestamp` est en **nanosecondes** et date l'**ajout**, pas la fin.
+- `/add` répond **toujours 200** : `{status: "ok"}` ou `{status: "error", msg}` (lien invalide, hôte introuvable), et
+  le lien refusé **atterrit aussi dans `done` en `error`** (d'où `download_failed` juste après un refus). JSON invalide
+  → 400. On envoie l'**ancien schéma** `format` + `quality` (`any`/`best|1080|720|480`, `mp3`/`best`) : la version
+  actuelle le traduit (`_migrate_legacy_request`) et les anciennes ne connaissent que lui.
+- Les files sont **indexées par URL** (`PersistentQueue.put`, clé `info.url`) : `/start` attend des **URL** dans
+  `ids`, pas les `id` affichés ; un même lien re-téléchargé remplace son entrée de `done`. Clé « déjà vu » de
+  l'intégration : `id|timestamp`, donc un re-téléchargement est annoncé à nouveau. `/start` répond `ok` même pour un
+  id inconnu.
+- **Garde cross-origin** de MeTube (`cross_origin_guard`) : une requête sans en-têtes `Origin` ni `Sec-Fetch-Site`
+  passe (comme curl). Ne jamais envoyer `Origin`.
+- Pas d'authentification dans MeTube : seulement celle d'un proxy inverse devant (Basic). `URL_PREFIX` préfixe toutes
+  les routes, socket.io compris.
+- `/history` écrit une ligne **info** dans le journal de MeTube à chaque appel : d'où le défaut à 30 s et la mention
+  dans la doc. `/version` n'existe pas sur les vieilles versions (404 toléré).
+- Socket.IO écarté : dépendance de plus pour un gain nul à cette cadence.
+- Formulaire du bouton de widget (Gladys ≥ 5.2.0) : `label`, `description`, `placeholder` et libellés d'options des
+  `fields` doivent être des **objets multilingues** (`validateWidgetContent` refuse une chaîne), contrairement aux
+  autres textes du contenu.
+- Test Docker : `ghcr.io/alexta69/metube`, réseau en pont `gladys-test-metube`, `curl` est dans l'image ;
+  `POST /add` avec `auto_start: false` pour figer un `pending`.

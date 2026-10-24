@@ -1,8 +1,8 @@
 {
-  "name": "gladys-integration-template-js",
+  "name": "gladys-metube",
   "version": "1.0.0",
   "private": true,
-  "description": "Official starter template to build an external integration for Gladys Assistant with the JavaScript SDK.",
+  "description": "MeTube (yt-dlp web interface) in Gladys Assistant: download queue, finished and failed downloads, add a video.",
   "type": "module",
   "main": "index.js",
   "scripts": {

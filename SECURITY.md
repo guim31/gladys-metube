@@ -30,6 +30,16 @@ Gladys before reporting a problem.
 
 In scope: the code of this repository and the Docker image it publishes.
 
+The integration stores under `/data` only the address of the MeTube server read
+last and the keys of the downloads already seen (their link and the time they
+were added). The user name and password of a reverse proxy in front of MeTube
+stay in the configuration of Gladys: they are sent to that address only, in the
+`Authorization` header (basic authentication: prefer HTTPS behind a reverse
+proxy), and never written to the logs. A link added from Gladys is logged with
+its host only (it may carry a token). The integration only talks to the address
+configured, over the local network; no cloud service, no inbound port. It adds
+downloads and starts the waiting ones; it never deletes a download nor a file.
+
 Out of scope: Gladys Assistant itself (see its
 [security policy](https://github.com/GladysAssistant/Gladys/security/policy)),
-and the third-party services and devices the integration talks to.
+and MeTube and yt-dlp themselves.

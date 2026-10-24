@@ -1,67 +1,150 @@
-# Template de démonstration
+# MeTube
 
-Ceci est la documentation utilisateur de l'intégration. Gladys ré-héberge ce
-fichier et affiche un lien **Documentation** permanent vers lui dans l'écran
-de configuration (dans la langue de l'utilisateur, avec l'anglais en repli) —
-c'est au moment de configurer que l'utilisateur en a le plus besoin. Gardez
-les courtes indications d'accueil dans les blocs `section` du `config_schema`
-du manifest ; mettez ici le pas-à-pas détaillé (captures d'écran, dépannage…).
+Retrouvez votre serveur [MeTube](https://github.com/alexta69/metube)
+(l'interface web auto-hébergée de yt-dlp, pour télécharger une vidéo ou une
+playlist à la demande) dans Gladys, sur votre réseau local : la file de
+téléchargements et sa progression, les téléchargements terminés et en erreur
+sur un tableau de bord, des scènes qui réagissent quand un téléchargement se
+termine ou échoue, et une action qui ajoute une vidéo à MeTube.
 
-## Ce que vous obtenez
+L'intégration a été testée contre un vrai MeTube 2026.10.23 (l'image Docker
+officielle, avec le téléchargement réel d'une vidéo du domaine public), pas
+encore dans une vraie installation de Gladys : vos retours sont les bienvenus
+sur le [forum Gladys](https://community.gladysassistant.com) ou dans les
+[issues](https://github.com/guim31/gladys-metube/issues).
 
-Six appareils de démonstration apparaissent après l'installation : une
-station météo (vraies données Open-Meteo), un interrupteur, une lampe
-variable, une prise connectée avec mesure de puissance, un détecteur de
-mouvement et une caméra.
+Ne téléchargez que ce que vous avez le droit de télécharger : vidéos du domaine
+public, sous licence libre, ou les vôtres.
 
-## Configuration
+## Ce qu'il faut
 
-1. Ouvrez l'onglet **Configuration** de l'intégration.
-2. Renseignez la **latitude** et la **longitude** que la station météo de
-   démonstration doit observer (Paris par défaut), et choisissez votre unité
-   de température. L'**intervalle de rafraîchissement** règle la fréquence
-   de lecture de la station météo et de la puissance de la prise : toutes
-   les 5 minutes par défaut, toutes les minutes au plus.
-3. Enregistrez : les appareils apparaissent dans l'onglet **Découverte**,
-   prêts à être ajoutés.
+- Gladys Assistant 5.2.0 ou plus récent.
+- Un serveur **MeTube**, joignable depuis Gladys (même réseau), sur le port de
+  son interface web (`8081` par défaut).
+- Si un proxy inverse devant MeTube demande un mot de passe (MeTube lui-même
+  n'en a pas), cet identifiant et ce mot de passe.
 
-Le réglage **Préférer la connexion locale** pilote la prise de
-démonstration : elle affiche en badge le canal réellement utilisé (local ou
-cloud), avec un point orange quand elle fonctionne en mode dégradé (local
-refusé, bascule cloud).
+## Installation
 
-## Actions
+1. Installez l'intégration depuis le catalogue de Gladys.
+2. Dans **Configuration**, saisissez l'**Adresse** de MeTube (par exemple
+   `192.168.1.2:8081` ; sans port, `8081` est utilisé). Si MeTube tourne avec
+   un `URL_PREFIX`, ajoutez-le : `192.168.1.2:8081/metube`. Derrière un proxy
+   inverse qui demande un mot de passe, remplissez aussi l'**Identifiant** et le
+   **Mot de passe**.
+3. Enregistrez, puis cliquez sur **Tester la connexion** : le message sous le
+   bouton donne les versions de MeTube et de yt-dlp, et les téléchargements en
+   cours, en attente, terminés et en erreur.
+4. Ouvrez l'onglet **Découverte** : un appareil pour le serveur. Cliquez sur
+   **Ajouter**, choisissez une pièce et enregistrez.
 
-- **Tester le fournisseur météo** — effectue une requête en direct vers
-  Open-Meteo et affiche la température et l'humidité actuelles sous le
-  bouton.
-- **Identifier un appareil** — choisissez un de vos appareils dans la liste
-  et il se signale (la lampe de démonstration « clignote » dans les logs).
+Options :
 
-## Scènes
+- **Intervalle de rafraîchissement** : de 10 secondes à 2 minutes (30 secondes
+  par défaut). MeTube écrit une ligne dans son propre journal à chaque lecture.
+- **Langue des noms de fonctionnalités** : les noms donnés aux fonctionnalités à
+  l'ajout de l'appareil (français par défaut), et la langue des messages de
+  l'action de scène.
 
-L'intégration ajoute ses propres cartes à l'éditeur de scènes (Gladys 5.1
-ou plus récent), dans la catégorie **Intégrations** :
+L'intégration lit l'historique de MeTube (`/history`, la liste même qu'affiche
+sa page web) et ajoute des liens par `/add`, comme la page web. Elle ne
+supprime jamais un téléchargement ni un fichier.
 
-- **Mouvement détecté** (déclencheur) — lance la scène quand un détecteur
-  de démonstration voit bouger quelque chose. Choisissez éventuellement le
-  détecteur et ce qui a bougé (personne, animal) ; laissés vides, toute
-  détection correspond. Les actions suivantes peuvent lire ce qui a bougé
-  avec `{{triggerEvent.data.target}}`.
-- **Identifier un appareil** (action) — fait se signaler l'appareil choisi.
-  Elle indique si l'appareil a pu se signaler, pour que les actions
-  suivantes puissent en dépendre.
+## L'appareil
+
+Un appareil, **MeTube** suivi de l'adresse du serveur :
+
+| Fonctionnalité                         | Ce qu'elle donne                                           |
+| -------------------------------------- | ---------------------------------------------------------- |
+| En ligne                               | 1 quand MeTube répond, 0 sinon                             |
+| Téléchargements en cours               | téléchargements qui tournent (préparation, téléchargement) |
+| Téléchargements en attente             | en attente d'une place libre, ou du bouton Démarrer        |
+| Téléchargements terminés               | téléchargements terminés dans l'historique de MeTube       |
+| Téléchargements en erreur              | téléchargements échoués dans l'historique de MeTube        |
+| Progression du téléchargement en cours | en pourcentage, 0 quand rien ne se télécharge              |
+| Vitesse de téléchargement              | en Mo/s, tous téléchargements confondus                    |
+| Téléchargement en cours                | son titre, en texte (« Aucun téléchargement » au repos)    |
+| Dernier téléchargement terminé         | son titre, en texte                                        |
+
+Les téléchargements terminés et en erreur sont ceux que MeTube garde dans son
+historique : quand vous les effacez dans MeTube, les chiffres baissent.
 
 ## Tableau de bord
 
-Ajoutez le widget **État de la démo** à un tableau de bord : il affiche en
-direct la température de la station météo et la puissance de la prise du
-bureau, la connexion utilisée par la prise (en orange si dégradée) et la
-position observée. Son bouton **Identifier la lampe** fait se signaler la
-lampe de démonstration.
+Le widget **Téléchargements MeTube** affiche trois tuiles (en cours, en attente,
+en erreur), la file (titre, progression et vitesse, ou ce qu'il attend), et les
+derniers téléchargements terminés ou en erreur (titre, fichier ou erreur,
+taille). Deux boutons :
+
+- **Ajouter une vidéo** : un formulaire avec le lien et la qualité ; la vidéo
+  est ajoutée à MeTube et démarre aussitôt.
+- **Démarrer** : affiché seulement quand des téléchargements ajoutés sans
+  démarrage automatique attendent le bouton Start de MeTube ; il les lance tous.
+
+Ajoutez-le depuis l'éditeur du tableau de bord ; il n'a aucun réglage et
+fonctionne avant même l'ajout de l'appareil.
+
+## Scènes
+
+### Déclencheurs
+
+- **Téléchargement MeTube terminé** : un téléchargement vient de se terminer,
+  quel que soit celui qui l'a ajouté (la page web de MeTube, son extension de
+  navigateur, Gladys). Informations transmises aux actions : le titre, le lien
+  de la vidéo, le nom du fichier et la taille en Mo.
+- **Téléchargement MeTube en erreur** : un téléchargement a échoué (lien non
+  pris en charge, vidéo indisponible ou privée, erreur de yt-dlp).
+  Informations : le titre, le lien et le message d'erreur.
+
+Chaque téléchargement est annoncé une seule fois, même après un redémarrage de
+l'intégration. Ce que MeTube avait déjà dans son historique au démarrage de
+l'intégration n'est pas annoncé. Le même lien téléchargé à nouveau est annoncé à
+nouveau.
+
+### Actions
+
+- **Ajouter une vidéo à MeTube** : ajoute une vidéo ou une playlist à la file de
+  MeTube, lancée aussitôt. Champs : le **Lien** (une variable d'une étape
+  précédente convient aussi) et la **Qualité** : meilleure vidéo, 1080p, 720p,
+  480p, ou audio seul (MP3). Quand MeTube refuse le lien, l'action échoue avec
+  son message.
+
+### Idées de scènes
+
+- Quand un téléchargement MeTube se termine, envoyez-vous un message :
+  « {title} est prêt ({size_mb} Mo) ».
+- Quand un téléchargement échoue, envoyez-vous le message d'erreur, pour
+  vérifier le lien ou mettre à jour yt-dlp.
+- Chaque dimanche à 8 h, ajoutez le lien d'une émission ou d'un podcast
+  hebdomadaire du domaine public en audio seul, pour l'écouter plus tard.
 
 ## Dépannage
 
-L'intégration journalise tout ce qu'elle fait : consultez les logs de
-l'intégration depuis l'interface Gladys (ou `docker logs` sur l'hôte) avec
-`LOG_LEVEL=debug` pour le détail complet.
+- **« MeTube ne répond pas »** : vérifiez l'adresse et le port (`8081`), et que
+  Gladys peut joindre le serveur (même réseau, pare-feu).
+- **« Aucun MeTube à cette adresse »** : un autre service répond sur ce port,
+  ou MeTube tourne avec un `URL_PREFIX` absent de l'adresse.
+- **« Identifiant ou mot de passe refusé ou manquant »** : un proxy inverse
+  demande un mot de passe ; saisissez son identifiant et son mot de passe.
+- **« L'adresse redirige »** : un proxy inverse renvoie vers une page de
+  connexion ou vers HTTPS ; saisissez l'adresse directe de MeTube sur votre
+  réseau.
+- **« MeTube a refusé le lien »** : yt-dlp ne prend pas en charge le site, ou
+  la vidéo est indisponible ; le message de MeTube dit pourquoi.
+- Plus de détails : réglez le `LOG_LEVEL` de l'intégration sur `debug` et
+  ouvrez ses logs.
+
+## Limites
+
+- Un téléchargement est vu à la lecture suivante : dans l'intervalle de
+  rafraîchissement.
+- Au plus 10 événements de chaque sorte par lecture : au-delà (une rafale de
+  téléchargements), ils sont comptés, pas annoncés.
+- L'intégration ne supprime ni téléchargement ni fichier, n'annule pas un
+  téléchargement et ne gère pas les abonnements de MeTube. Pour suivre
+  automatiquement des chaînes et des playlists YouTube, voir
+  l'[intégration Pinchflat](https://github.com/guim31/gladys-pinchflat).
+- Un proxy inverse avec une page de connexion (OAuth, Authelia…) n'est pas pris
+  en charge : seulement une authentification basique (identifiant et mot de
+  passe).
+- Sans lien avec MeTube, yt-dlp ni aucun site de vidéos.
